@@ -57,8 +57,8 @@ opt = parser.parse_args()
 
 opt.log_path = os.path.join('output', str(datetime.datetime.now()) + '.txt')
 
-if torch.cuda.is_available():
-	opt.cuda = True
+# if torch.cuda.is_available():
+# 	opt.cuda = True
 
 opt.resume = False
 

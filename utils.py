@@ -41,7 +41,9 @@ def mask_generator(shadow, shadow_free):
 
 	diff = (np.asarray(im_f, dtype='float32')- np.asarray(im_s, dtype='float32')) # difference between shadow image and shadow_free image
 	L = threshold_otsu(diff)
-	mask = torch.tensor((np.float32(diff >= L)-0.5)/0.5).unsqueeze(0).unsqueeze(0).cuda() #-1.0:non-shadow, 1.0:shadow
+	mask = torch.tensor((np.float32(diff >= L)-0.5)/0.5).unsqueeze(0).unsqueeze(0) #-1.0:non-shadow, 1.0:shadow
+	if shadow.is_cuda:
+		mask=mask.cuda()
 	mask.requires_grad = False
 
 	return mask
