@@ -18,10 +18,10 @@ from utils import QueueMask
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=1, help='size of the batches')
-parser.add_argument('--dataroot', type=str, default='datasets/horse2zebra/', help='root directory of the dataset')
+parser.add_argument('--dataroot', type=str, default='dataset/test', help='root directory of the dataset')
 parser.add_argument('--input_nc', type=int, default=3, help='number of channels of input data')
 parser.add_argument('--output_nc', type=int, default=3, help='number of channels of output data')
-parser.add_argument('--size', type=int, default=400, help='size of the data (squared assumed)')
+parser.add_argument('--size', type=int, default=200, help='size of the data (squared assumed)')
 parser.add_argument('--cuda', action='store_true', help='use GPU computation')
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
 parser.add_argument('--generator_A2B', type=str, default='output/netG_A2B.pth', help='A2B generator checkpoint file')
@@ -43,16 +43,21 @@ opt = parser.parse_args()
 # opt.im_suf_B = '.jpg'
 
 ### USR
-opt.dataroot_A = '/home/xwhu/dataset/shadow_USR/shadow_test'
-opt.dataroot_B = '/home/xwhu/dataset/shadow_USR/shadow_free'
+# opt.dataroot_A = '/home/xwhu/dataset/shadow_USR/shadow_test'
+# opt.dataroot_B = '/home/xwhu/dataset/shadow_USR/shadow_free'
+# 
+# opt.im_suf_A = '.jpg'
+# opt.im_suf_B = '.jpg'
 
+opt.dataroot_A = os.path.join(opt.dataroot, 'shadow_test')
+opt.dataroot_B = os.path.join(opt.dataroot, 'shadow_free')
 opt.im_suf_A = '.jpg'
 opt.im_suf_B = '.jpg'
 
-
-if torch.cuda.is_available():
-    opt.cuda = True
-    device = torch.device('cuda:0')
+# if torch.cuda.is_available():
+#     opt.cuda = True
+#     device = torch.device('cuda:0')
+device = torch.device('cuda:0' if opt.cuda else 'cpu')
 
 print(opt)
 
