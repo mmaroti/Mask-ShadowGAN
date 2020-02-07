@@ -14,13 +14,21 @@ class ImageDataset(Dataset):
         self.files_A = sorted(glob.glob(os.path.join(root, 'shadow_train') + '/*.*'))
         self.files_B = sorted(glob.glob(os.path.join(root, 'shadow_free') + '/*.*'))
 
+    def image_open(self, name):
+        image = Image.open(name)
+        if image.mode == 'RGBA':
+            image2 = Image.new('RGB', image.size, (255, 255, 255))
+            image2.paste(image, mask=image.split()[3])
+            image = image2
+        return image
+
     def __getitem__(self, index):
-        item_A = self.transform(Image.open(self.files_A[index % len(self.files_A)]))
+        item_A = self.transform(self.image_open(self.files_A[index % len(self.files_A)]))
 
         if self.unaligned:
-            item_B = self.transform(Image.open(self.files_B[random.randint(0, len(self.files_B) - 1)]))
+            item_B = self.transform(self.image_open(self.files_B[random.randint(0, len(self.files_B) - 1)]))
         else:
-            item_B = self.transform(Image.open(self.files_B[index % len(self.files_B)]))
+            item_B = self.transform(self.image_open(self.files_B[index % len(self.files_B)]))
 
         return {'A': item_A, 'B': item_B}
 
