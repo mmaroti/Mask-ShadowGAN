@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!../venv/bin/python3
 
 from __future__ import print_function
 import os
@@ -33,7 +33,7 @@ from utils import QueueMask
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='starting epoch')
 parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
-parser.add_argument('--batchSize', type=int, default=1, help='size of the batches')
+parser.add_argument('--batchSize', type=int, default=8, help='size of the batches')
 parser.add_argument('--dataroot', type=str, default='dataset/shadow_USR', help='root directory of the dataset')
 parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate')
 parser.add_argument('--decay_epoch', type=int, default=100,
@@ -181,12 +181,12 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
 		mask_queue.insert(mask_generator(real_A, fake_B))
 
-		fake_A = netG_B2A(real_B, mask_queue.rand_item())
+		fake_A = netG_B2A(real_B, mask_queue.rand_item(opt.batchSize, opt.cuda))
 		pred_fake = netD_A(fake_A)
 		loss_GAN_B2A = criterion_GAN(pred_fake, target_real)  # log(Da(Ga(b)))
 
 		# Cycle loss
-		recovered_A = netG_B2A(fake_B, mask_queue.last_item()) # real shadow, false shadow free
+		recovered_A = netG_B2A(fake_B, mask_queue.last_item(opt.batchSize, opt.cuda)) # real shadow, false shadow free
 		loss_cycle_ABA = criterion_cycle(recovered_A, real_A) * 10.0  # ||Ga(Gb(a))-a||1
 
 		recovered_B = netG_A2B(fake_A)
@@ -269,11 +269,11 @@ for epoch in range(opt.epoch, opt.n_epochs):
 			print(avg_log)
 			open(opt.log_path, 'a').write(avg_log + '\n')
 
-			img_fake_A = 0.5 * (fake_A.detach().data + 1.0)
+			img_fake_A = 0.5 * (fake_A[0].detach().data + 1.0)
 			img_fake_A = (to_pil(img_fake_A.data.squeeze(0).cpu()))
 			img_fake_A.save('output/fake_A.png')
 
-			img_fake_B = 0.5 * (fake_B.detach().data + 1.0)
+			img_fake_B = 0.5 * (fake_B[0].detach().data + 1.0)
 			img_fake_B = (to_pil(img_fake_B.data.squeeze(0).cpu()))
 			img_fake_B.save('output/fake_B.png')
 

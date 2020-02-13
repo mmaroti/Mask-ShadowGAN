@@ -20,34 +20,48 @@ class QueueMask():
         self.queue = []
 
     def insert(self, mask):
-        if self.queue.__len__() >= self.max_length:
-            self.queue.pop(0)
+        for idx in range(len(mask)):
+            if self.queue.__len__() >= self.max_length:
+                self.queue.pop(0)
 
-        self.queue.append(mask)
+            self.queue.append(mask[idx])
 
-    def rand_item(self):
+    def rand_item(self, batch_size, is_cuda):
         assert self.queue.__len__() > 0, 'Error! Empty queue!'
-        return self.queue[np.random.randint(0, self.queue.__len__())]
+        possible_indices = np.arange(self.queue.__len__())
+        np.random.shuffle(possible_indices)
+        indices = possible_indices[0:batch_size]
+        random_mask_q = [self.queue[idx] for idx in indices]
+        # random_mask = self.queue[np.random.randint(0, self.queue.__len__())]
+        random_masks = torch.tensor(np.stack([x.data.cpu() for x in random_mask_q], axis=0))
+        if is_cuda:
+            random_masks = random_masks.cuda()
+        random_masks.requires_grad = False
+        return random_masks
 
-    def last_item(self):
+    def last_item(self, batch_size, is_cuda):
         assert self.queue.__len__() > 0, 'Error! Empty queue!'
-        return self.queue[self.queue.__len__()-1]
-
+        last_items = self.queue[(-1)*batch_size:]
+        last_masks = torch.tensor(np.stack([x.data.cpu() for x in last_items], axis=0))
+        if is_cuda:
+            last_masks = last_masks.cuda()
+        last_masks.requires_grad = False
+        return last_masks
 
 
 def mask_generator(shadow, shadow_free):
-	im_f = to_gray(to_pil(((shadow_free.data.squeeze(0) + 1.0) * 0.5).cpu()))
-	im_s = to_gray(to_pil(((shadow.data.squeeze(0) + 1.0) * 0.5).cpu()))
+    mask_list = []
+    for idx in torch.arange(shadow.size()[0]):
+        im_f = to_gray(to_pil(((shadow_free.data[idx].squeeze(0) + 1.0) * 0.5).cpu()))
+        im_s = to_gray(to_pil(((shadow.data[idx].squeeze(0) + 1.0) * 0.5).cpu()))
 
-	diff = (np.asarray(im_f, dtype='float32')- np.asarray(im_s, dtype='float32')) # difference between shadow image and shadow_free image
-	L = threshold_otsu(diff)
-	mask = torch.tensor((np.float32(diff >= L)-0.5)/0.5).unsqueeze(0).unsqueeze(0) #-1.0:non-shadow, 1.0:shadow
-	if shadow.is_cuda:
-		mask=mask.cuda()
-	mask.requires_grad = False
-
-	return mask
-
+        diff = (np.asarray(im_f, dtype='float32')- np.asarray(im_s, dtype='float32')) # difference between shadow image and shadow_free image
+        L = threshold_otsu(diff)
+        mask = torch.tensor((np.float32(diff >= L)-0.5)/0.5).unsqueeze(0)#-1.0:non-shadow, 1.0:shadow
+        if shadow.is_cuda:
+            mask = mask.cuda()
+        mask_list.append(mask)
+    return mask_list
 
 
 def tensor2image(tensor):
